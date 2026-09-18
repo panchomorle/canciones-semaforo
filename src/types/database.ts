@@ -22,4 +22,5 @@ export interface PublicDedication {
   recipient_name: string
   is_mine: boolean
   created_at: string
+  song?: Song
 }
