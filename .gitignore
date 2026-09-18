@@ -30,3 +30,7 @@ dist-ssr
 mcp_config.json
 .agents/mcp_config.json
 
+# Vercel
+.vercel
+
+
