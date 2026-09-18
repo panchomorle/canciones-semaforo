@@ -12,7 +12,8 @@ import {
   Radio, 
   Eye, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react'
 
 interface AdminDashboardProps {
@@ -29,6 +30,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'songs' | 'dedications'>('songs')
+  const [expandedSongIds, setExpandedSongIds] = useState<Set<string>>(new Set())
+
+  const toggleSongExpanded = (songId: string) => {
+    setExpandedSongIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(songId)) {
+        next.delete(songId)
+      } else {
+        next.add(songId)
+      }
+      return next
+    })
+  }
 
   // Load initial data
   const fetchData = async () => {
@@ -50,6 +64,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
           id,
           song_id,
           recipient_name,
+          sender_name,
           created_at,
           songs:song_id (
             id,
@@ -331,77 +346,143 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
                     <div className="divide-y divide-slate-800/60">
                       {songs.map((song) => {
                         const count = getDedicationCount(song.id)
+                        const isExpanded = expandedSongIds.has(song.id)
+                        const songDedications = dedications.filter((d) => d.song_id === song.id)
+
                         return (
                           <div
                             key={song.id}
-                            className={`py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                              song.is_played ? 'opacity-50' : 'opacity-100'
+                            className={`py-4 transition-colors ${
+                              song.is_played ? 'opacity-60' : 'opacity-100'
                             }`}
                           >
-                            <div className="flex items-start gap-3">
-                              <div
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                                  song.is_played
-                                    ? 'bg-slate-800 text-slate-500'
-                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                }`}
-                              >
-                                <Music className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`font-semibold text-sm ${song.is_played ? 'line-through text-slate-400' : 'text-white'}`}>
-                                    {song.title}
-                                  </span>
-                                  {song.is_played ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
-                                      YA TOCADA
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                      DISPONIBLE
-                                    </span>
-                                  )}
-                                  {count > 0 && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                                      <Heart className="w-2.5 h-2.5 fill-rose-400" />
-                                      {count} {count === 1 ? 'dedicatoria' : 'dedicatorias'}
-                                    </span>
-                                  )}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div
+                                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                                    song.is_played
+                                      ? 'bg-slate-800 text-slate-500'
+                                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                  }`}
+                                >
+                                  <Music className="w-4 h-4" />
                                 </div>
-                                <p className="text-xs text-slate-400 mt-0.5">{song.artist}</p>
+                                <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`font-semibold text-sm ${song.is_played ? 'line-through text-slate-400' : 'text-white'}`}>
+                                      {song.title}
+                                    </span>
+                                    {song.is_played ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                                        YA TOCADA
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        DISPONIBLE
+                                      </span>
+                                    )}
+                                    {count > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleSongExpanded(song.id)}
+                                        aria-expanded={isExpanded}
+                                        aria-label={`${isExpanded ? 'Ocultar' : 'Ver'} dedicatorias de ${song.title}`}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
+                                      >
+                                        <Heart className="w-2.5 h-2.5 fill-rose-400" />
+                                        <span>{count} {count === 1 ? 'dedicatoria' : 'dedicatorias'}</span>
+                                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                      </button>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-slate-400 mt-0.5">{song.artist}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <button
+                                  onClick={() => handleTogglePlayed(song)}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                    song.is_played
+                                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                                  }`}
+                                >
+                                  {song.is_played ? (
+                                    <>
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                      <span>Reactivar</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Marcar Tocada</span>
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSong(song.id)}
+                                  title="Eliminar canción"
+                                  className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 self-end sm:self-auto">
-                              <button
-                                onClick={() => handleTogglePlayed(song)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                                  song.is_played
-                                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
-                                }`}
+                            {/* Expandable song dedications dropdown (accordion) */}
+                            {count > 0 && isExpanded && (
+                              <div
+                                data-testid={`song-dedications-${song.id}`}
+                                className="mt-3 pt-3 border-t border-slate-800/80 pl-2 sm:pl-11 space-y-2"
                               >
-                                {song.is_played ? (
-                                  <>
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                    <span>Reactivar</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Marcar Tocada</span>
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSong(song.id)}
-                                title="Eliminar canción"
-                                className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                                <p className="text-[11px] font-semibold text-slate-400 mb-1.5">
+                                  Dedicatorias para esta canción:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {songDedications.map((dedication) => {
+                                    const timeStr = new Date(dedication.created_at).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                    const isAnonymous = !dedication.sender_name
+
+                                    return (
+                                      <div
+                                        key={dedication.id}
+                                        className={`p-3 rounded-xl border text-xs transition-all ${
+                                          isAnonymous
+                                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+                                            : 'bg-slate-950 border-indigo-500/40 text-slate-100'
+                                        }`}
+                                      >
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                          <span className="font-bold text-white flex items-center gap-1 truncate">
+                                            <Heart className="w-3 h-3 fill-rose-500 text-rose-500 shrink-0" />
+                                            Para: {dedication.recipient_name}
+                                          </span>
+                                          <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                                            {timeStr}
+                                          </span>
+                                        </div>
+
+                                        <div className="mt-1.5">
+                                          {isAnonymous ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                              Anónima
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-500/25 text-indigo-200 border border-indigo-500/40">
+                                              De: {dedication.sender_name}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )
                       })}
@@ -425,7 +506,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
                 </div>
 
                 <p className="text-xs text-slate-400 mb-4">
-                  Como administrador podés ver los nombres reales de los homenajeados en tiempo real:
+                  Como administrador podés ver los destinatarios y emisores de las dedicatorias en tiempo real:
                 </p>
 
                 {dedications.length === 0 ? (
@@ -441,11 +522,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
                         hour: '2-digit',
                         minute: '2-digit',
                       })
+                      const isAnonymous = !dedication.sender_name
 
                       return (
                         <div
                           key={dedication.id}
-                          className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl hover:border-rose-500/30 transition-all group shadow-sm"
+                          className={`p-3.5 rounded-xl border transition-all group shadow-sm ${
+                            isAnonymous
+                              ? 'bg-slate-950/80 border-amber-500/20 hover:border-amber-500/40'
+                              : 'bg-slate-950/90 border-indigo-500/30 hover:border-indigo-500/50'
+                          }`}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1.5">
                             <span className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
@@ -454,6 +540,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
                             </span>
                             <span className="text-[10px] text-slate-500 font-mono">{timeStr}</span>
                           </div>
+
+                          <div className="mb-2">
+                            {isAnonymous ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                Anónima
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                De: {dedication.sender_name}
+                              </span>
+                            )}
+                          </div>
+
                           <p className="text-xs font-medium text-white truncate">
                             {songTitle}
                           </p>

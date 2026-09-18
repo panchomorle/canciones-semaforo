@@ -20,6 +20,8 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
   onSuccess,
 }) => {
   const [recipientName, setRecipientName] = useState('')
+  const [isAnonymous, setIsAnonymous] = useState(true)
+  const [senderName, setSenderName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -27,9 +29,15 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const trimmed = recipientName.trim()
-    if (!trimmed) {
+    const trimmedRecipient = recipientName.trim()
+    if (!trimmedRecipient) {
       setErrorMessage('Por favor ingresá un nombre o apodo.')
+      return
+    }
+
+    const trimmedSender = senderName.trim()
+    if (!isAnonymous && !trimmedSender) {
+      setErrorMessage('Por favor ingresá tu nombre o apodo.')
       return
     }
 
@@ -39,8 +47,9 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
     try {
       const { error } = await supabase.from('dedications').insert({
         song_id: song.id,
-        recipient_name: trimmed,
+        recipient_name: trimmedRecipient,
         client_token: clientToken,
+        sender_name: isAnonymous ? null : trimmedSender,
       })
 
       if (error) {
@@ -58,7 +67,7 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
       // Save locally to persist across tab/reload
       saveClientDedicationRecord({
         songId: song.id,
-        recipientName: trimmed,
+        recipientName: trimmedRecipient,
         timestamp: new Date().toISOString(),
       })
 
@@ -75,7 +84,9 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
       }
 
       setRecipientName('')
-      onSuccess(trimmed, song)
+      setSenderName('')
+      setIsAnonymous(true)
+      onSuccess(trimmedRecipient, song)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'No se pudo enviar la dedicatoria. Intentalo nuevamente.'
       setErrorMessage(msg)
@@ -140,7 +151,15 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-xs flex items-start gap-2.5">
             <Lock className="w-4 h-4 shrink-0 mt-0.5 text-slate-500" />
             <p>
-              Tu dedicatoria es anónima para el público (verán <em>&quot;Alguien especial&quot;</em>), pero la banda y vos verán el nombre real.
+              {isAnonymous ? (
+                <>
+                  Dedicatoria anónima: tu nombre no se registrará y solo el nombre del destinatario aparecerá en el panel en vivo.
+                </>
+              ) : (
+                <>
+                  Tu nombre solo será visible para la banda en el panel de administración. En el panel en vivo únicamente se mostrará el destinatario.
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -176,6 +195,46 @@ export const DedicationModal: React.FC<DedicationModalProps> = ({
               <span>{recipientName.length}/50</span>
             </div>
           </div>
+
+          <div className="flex items-center gap-2.5 pt-1">
+            <input
+              id="anonymous-checkbox"
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              disabled={isSubmitting}
+              className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900 cursor-pointer"
+            />
+            <label
+              htmlFor="anonymous-checkbox"
+              className="text-xs font-semibold text-slate-300 cursor-pointer select-none"
+            >
+              Dedicatoria anónima
+            </label>
+          </div>
+
+          {!isAnonymous && (
+            <div className="animate-in fade-in duration-150">
+              <label htmlFor="sender-name" className="block text-xs font-semibold text-slate-300 mb-1.5">
+                ¿Quién la envía?
+              </label>
+              <input
+                id="sender-name"
+                type="text"
+                maxLength={50}
+                required
+                disabled={isSubmitting}
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                placeholder="Tu nombre o apodo (ej: Lucas)"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 disabled:opacity-50 transition-all"
+              />
+              <div className="flex justify-between text-[11px] text-slate-500 mt-1 px-1">
+                <span>Máximo 50 caracteres</span>
+                <span>{senderName.length}/50</span>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button

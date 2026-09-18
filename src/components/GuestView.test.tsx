@@ -51,7 +51,7 @@ describe('GuestView', () => {
     {
       id: 'ded-1',
       song_id: 'song-2',
-      recipient_name: 'Alguien especial',
+      recipient_name: 'Camila',
       is_mine: false,
       created_at: '2026-09-18T10:06:00Z',
     },
@@ -163,11 +163,20 @@ describe('GuestView', () => {
     await waitFor(() => {
       expect(screen.getByText(/¡Ya enviaste tu dedicatoria!/i)).toBeInTheDocument()
       expect(screen.getAllByText(/Mariana/i).length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText(/"De Música Ligera"/i)).toBeInTheDocument()
     })
 
     // On other available songs, dedication button should be disabled as "Ya dedicaste"
     const disabledButtons = screen.getAllByRole('button', { name: /Ya dedicaste/i })
     expect(disabledButtons.length).toBeGreaterThanOrEqual(1)
     expect(disabledButtons[0]).toBeDisabled()
+  })
+
+  it('renders footer with updated 1 dedicatoria por persona copy', async () => {
+    render(<GuestView onNavigateToAdmin={vi.fn()} />)
+    await waitFor(() => {
+      expect(screen.getByText(/1 dedicatoria por persona/i)).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/1 dedicatoria anónima por persona/i)).not.toBeInTheDocument()
   })
 })

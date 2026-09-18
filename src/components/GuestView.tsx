@@ -530,7 +530,7 @@ export const GuestView: React.FC<GuestViewProps> = ({ onNavigateToAdmin, isAdmin
           </div>
           <div className="flex items-center gap-2 text-slate-400">
             <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-            <span>1 dedicatoria anónima por persona</span>
+            <span>1 dedicatoria por persona</span>
           </div>
         </div>
       </footer>

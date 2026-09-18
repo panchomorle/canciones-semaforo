@@ -47,7 +47,7 @@ export const DedicationFeed: React.FC<DedicationFeedProps> = ({
       </div>
 
       <p className="text-xs text-slate-400 mb-4">
-        Las dedicatorias del evento se transmiten en tiempo real manteniendo el misterio.
+        Las dedicatorias del evento se transmiten en tiempo real en la pantalla.
       </p>
 
       {/* Dedication List */}
