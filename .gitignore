@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment & MCP Secrets
+.env
+.env.*
+!.env.example
+mcp_config.json
+.agents/mcp_config.json
+
