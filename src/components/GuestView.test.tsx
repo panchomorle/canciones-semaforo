@@ -179,4 +179,28 @@ describe('GuestView', () => {
     })
     expect(screen.queryByText(/1 dedicatoria anónima por persona/i)).not.toBeInTheDocument()
   })
+
+  it('displays songs always in alphabetical order by title regardless of insertion order', async () => {
+    const unorderedSongs: Song[] = [
+      { id: 's-1', title: 'Zamba para olvidar', artist: 'Daniel Toro', is_played: false, created_at: '2026-09-18T10:00:00Z' },
+      { id: 's-2', title: 'Amándote', artist: 'Rubén Blades', is_played: false, created_at: '2026-09-18T10:05:00Z' },
+      { id: 's-3', title: 'Crimen', artist: 'Gustavo Cerati', is_played: false, created_at: '2026-09-18T10:10:00Z' },
+    ]
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: unorderedSongs, error: null }),
+      }),
+    } as any)
+
+    render(<GuestView onNavigateToAdmin={vi.fn()} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Amándote')).toBeInTheDocument()
+    })
+
+    const songHeadings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    expect(songHeadings).toEqual(['Amándote', 'Crimen', 'Zamba para olvidar'])
+  })
 })
+

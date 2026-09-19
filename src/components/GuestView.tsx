@@ -45,7 +45,7 @@ export const GuestView: React.FC<GuestViewProps> = ({ onNavigateToAdmin, isAdmin
       const { data, error } = await supabase
         .from('songs')
         .select('*')
-        .order('created_at', { ascending: true })
+        .order('title', { ascending: true })
 
       if (error) throw error
       if (data) setSongs(data)
@@ -155,17 +155,23 @@ export const GuestView: React.FC<GuestViewProps> = ({ onNavigateToAdmin, isAdmin
 
   // Filter and search songs
   const filteredSongs = useMemo(() => {
-    return songs.filter((song) => {
-      const matchesSearch =
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase())
+    return songs
+      .filter((song) => {
+        const matchesSearch =
+          song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          song.artist.toLowerCase().includes(searchQuery.toLowerCase())
 
-      if (!matchesSearch) return false
+        if (!matchesSearch) return false
 
-      if (filterTab === 'available') return !song.is_played
-      if (filterTab === 'played') return song.is_played
-      return true
-    })
+        if (filterTab === 'available') return !song.is_played
+        if (filterTab === 'played') return song.is_played
+        return true
+      })
+      .sort(
+        (a, b) =>
+          a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }) ||
+          a.artist.localeCompare(b.artist, 'es', { sensitivity: 'base' })
+      )
   }, [songs, searchQuery, filterTab])
 
   // Handle click to dedicate

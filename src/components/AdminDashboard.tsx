@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Song, Dedication } from '../types/database'
 import { 
@@ -52,7 +52,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
       const { data: songsData, error: songsError } = await supabase
         .from('songs')
         .select('*')
-        .order('created_at', { ascending: true })
+        .order('title', { ascending: true })
 
       if (songsError) throw songsError
       setSongs(songsData || [])
@@ -99,7 +99,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
           supabase
             .from('songs')
             .select('*')
-            .order('created_at', { ascending: true })
+            .order('title', { ascending: true })
             .then(({ data }) => {
               if (data) setSongs(data)
             })
@@ -201,6 +201,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
   const getDedicationCount = (songId: string) => {
     return dedications.filter((d) => d.song_id === songId).length
   }
+
+  // Sorted songs alphabetically by title and artist
+  const sortedSongs = useMemo(() => {
+    return [...songs].sort(
+      (a, b) =>
+        a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }) ||
+        a.artist.localeCompare(b.artist, 'es', { sensitivity: 'base' })
+    )
+  }, [songs])
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -344,7 +353,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
                     </p>
                   ) : (
                     <div className="divide-y divide-slate-800/60">
-                      {songs.map((song) => {
+                      {sortedSongs.map((song) => {
                         const count = getDedicationCount(song.id)
                         const isExpanded = expandedSongIds.has(song.id)
                         const songDedications = dedications.filter((d) => d.song_id === song.id)
@@ -369,7 +378,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwit
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`font-semibold text-sm ${song.is_played ? 'line-through text-slate-400' : 'text-white'}`}>
+                                    <span
+                                      data-testid="admin-song-title"
+                                      className={`font-semibold text-sm ${song.is_played ? 'line-through text-slate-400' : 'text-white'}`}
+                                    >
                                       {song.title}
                                     </span>
                                     {song.is_played ? (
